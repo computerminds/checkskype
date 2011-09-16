@@ -6,6 +6,9 @@ import signal
 import socket
 import string
 import time
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 users = []
 
@@ -15,7 +18,7 @@ api = None
 me = None
 pid = None
 
-MYPORT =  37957 # EPYKS on a mobile phone keypad
+MYPORT =  37958 # EPYKS on a mobile phone keypad
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.bind(('', MYPORT))
@@ -45,7 +48,7 @@ def restart ():
     
     if status == 'OFFLINE':
         return # We are set to appear offline
-    
+
     # This exception is caught by the main loop
     raise PleaseRestart()
 
@@ -55,6 +58,8 @@ def arg(s, arg):
     return parts[arg]
 
 def attach ():
+    logging.info('Attaching to skype')
+    
     skype = bus.get_object('com.Skype.API', '/com/Skype')
     
     global api
@@ -72,11 +77,17 @@ def attach ():
     
     me = arg(api('GET CURRENTUSERHANDLE'), -1)
     
+    logging.debug('Logged into skype as: %s' % me)
+    
     global pid
     
     dbusinfo = bus.get_object('org.freedesktop.DBus', '/org/freedesktop/DBus')
     
     pid = dbusinfo.GetConnectionUnixProcessID('com.Skype.API')
+    
+    logging.debug('Skype process id found: %d' % pid)
+    
+    logging.info('Successfully attached to skype')
 
 def getstatus (username = None):
     if username:
@@ -95,19 +106,52 @@ def checkuser (user):
     if status != 'OFFLINE':
         return
     
-    print '%s is offline!' % user
+    logging.debug('%s is offline!' % user)
     
     # TODO: stop sending these after 2 mins or so
-    sendudp(user)
-
-def update ():
-    messages = getudp()
+    broadcast_offline(user)
     
+def broadcast_self():
+    send_message('nick', me)
+
+def broadcast_offline():
+    send_message('off', me)
+
+def send_message(type, message):
+    packet = [type, message]
+    sendudp('|'.join(packet))
+    
+def decode_message(packet):
+    return '|'.split(packet, 2)
+
+def process_messages(packets):
     # Check if anyone else thinks we are offline
-    for user in messages:
-        if user == me:
-            # TODO: require multiple messages to believe it
-            restart()
+    for packet in packets:
+        message = decode_message(packet)
+        if message[0] == 'nick':
+            process_message_nick(message[1])
+        elif message[0] == 'off':
+            process_message_off(message[1])
+        else:
+            logging.debug('Received unknown message')
+
+def process_message_nick(nick):
+    global users
+    if nick not in users:
+        logging.info('Now checking for user: ' % nick)
+        users.append(nick)
+        
+def process_message_off(nick):
+    if nick == me:
+        #TODO:  only restart when we get a few of these.
+        restart()
+    
+def update ():    
+    # Broadcast ourselves as being online
+    broadcast_self()
+    
+    packets = getudp()
+    process_messages(packets)
     
     # Check if we think anyone else is offline
     for user in users:
@@ -124,8 +168,11 @@ while True:
         # Skype is probably not running: be patient and maybe it'll come along later
         time.sleep(60)
     except PleaseRestart:
+        logging.info('Caught skype crash, restarting...')
         os.kill(pid, signal.SIGKILL)
         os.system('skype &')
         # Wait and try to re-attach to the new instance of Skype
         time.sleep(60)
 
+# Clean up.
+s.close()
