@@ -116,8 +116,8 @@ def checkuser (user):
 def broadcast_self():
     send_message('nick', me)
 
-def broadcast_offline():
-    send_message('off', me)
+def broadcast_offline(user):
+    send_message('off', user)
 
 def send_message(type, message):
     packet = [type, message]
