@@ -77,7 +77,7 @@ def attach ():
     
     me = arg(api('GET CURRENTUSERHANDLE'), -1)
     
-    logging.debug('Logged into skype as: %s' % me)
+    logging.debug('Logged into skype as: %s', me)
     
     global pid
     
@@ -85,7 +85,7 @@ def attach ():
     
     pid = dbusinfo.GetConnectionUnixProcessID('com.Skype.API')
     
-    logging.debug('Skype process id found: %d' % pid)
+    logging.debug('Skype process id found: %d', pid)
     
     logging.info('Successfully attached to skype')
 
@@ -101,12 +101,14 @@ def checkuser (user):
     if user == me:
         return
     
+    logging.debug('Checking status of user: %s', user)
+    
     status = getstatus(user)
     
     if status != 'OFFLINE':
         return
     
-    logging.debug('%s is offline!' % user)
+    logging.debug('%s is offline!', user)
     
     # TODO: stop sending these after 2 mins or so
     broadcast_offline(user)
@@ -122,7 +124,7 @@ def send_message(type, message):
     sendudp('|'.join(packet))
     
 def decode_message(packet):
-    return '|'.split(packet, 2)
+    return packet.split('|', 1)
 
 def process_messages(packets):
     # Check if anyone else thinks we are offline
@@ -133,13 +135,14 @@ def process_messages(packets):
         elif message[0] == 'off':
             process_message_off(message[1])
         else:
-            logging.debug('Received unknown message')
+            logging.debug('Received unknown message: %s (%s)' , packet, message[0])
 
 def process_message_nick(nick):
     global users
     if nick not in users:
-        logging.info('Now checking for user: ' % nick)
-        users.append(nick)
+        if nick != me:
+            logging.info('Now checking for user: %s', nick)
+            users.append(nick)
         
 def process_message_off(nick):
     if nick == me:
