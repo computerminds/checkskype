@@ -176,8 +176,8 @@ while True:
             time.sleep(30)
     except dbus.exceptions.DBusException:
         # Skype is probably not running: be patient and maybe it'll come along later
-        my_logger.info('Could not attach to skype, waiting 10s to try again...')
-        time.sleep(10)
+        my_logger.info('Could not attach to skype, waiting 60s to try again...')
+        time.sleep(60)
     except PleaseRestart:
         my_logger.info('Caught skype crash, restarting...')
         os.kill(pid, signal.SIGKILL)
