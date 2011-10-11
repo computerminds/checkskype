@@ -1,0 +1,13 @@
+Run this script on a local network with others also running this script: Skype will be restarted if it dies.
+
+You can set a program to run when Skype starts up by going to:
+
+Skype -> Options -> Notifications -> Skype Login -> Advanced View -> Execute the following script
+
+In the Coventry ComputerMinds office the command to run is:
+
+/etc/init.d/cm_checkskype start
+
+This wrapping script checks if cm_checkskype.py is already running: which is important since it will be run again when Skype restarts.
+
+For some reason you can't just start up the script once at system startup: if started too early it never finds Skype.
