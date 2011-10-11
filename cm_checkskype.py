@@ -19,6 +19,8 @@ my_logger.addHandler(handler)
 
 users = []
 
+user_notify_count = {}
+
 bus = dbus.SessionBus()
 
 api = None
@@ -108,16 +110,22 @@ def checkuser (user):
     if user == me:
         return
     
+    # Have notified this user 5 times, they are probably offline for good
+    if user_notify_count[user] > 5:
+        return;
+    
     my_logger.debug('Checking status of user: %s', user)
     
     status = getstatus(user)
     
     if status != 'OFFLINE':
+        user_notify_count[user] = 0
         return
     
     my_logger.debug('%s is offline!', user)
     
-    # TODO: stop sending these after 2 mins or so
+    user_notify_count[user] += 1
+    
     broadcast_offline(user)
     
 def broadcast_self():
@@ -146,10 +154,14 @@ def process_messages(packets):
 
 def process_message_nick(nick):
     global users
+    
+    user_notify_count[nick] = 0
+    
     if nick not in users:
         if nick != me:
             my_logger.info('Now checking for user: %s', nick)
             users.append(nick)
+            
         
 def process_message_off(nick):
     if nick == me:
