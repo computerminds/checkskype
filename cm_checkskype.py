@@ -7,8 +7,15 @@ import socket
 import string
 import time
 import logging
+import logging.handlers
 
-logging.basicConfig(level=logging.DEBUG)
+my_logger = logging.getLogger('CMSkype')
+my_logger.setLevel(logging.DEBUG)
+
+handler = logging.handlers.SysLogHandler(address = '/dev/log')
+
+my_logger.addHandler(handler)
+
 
 users = []
 
@@ -58,7 +65,7 @@ def arg(s, arg):
     return parts[arg]
 
 def attach ():
-    logging.info('Attaching to skype')
+    my_logger.info('Attaching to skype')
     
     skype = bus.get_object('com.Skype.API', '/com/Skype')
     
@@ -77,7 +84,7 @@ def attach ():
     
     me = arg(api('GET CURRENTUSERHANDLE'), -1)
     
-    logging.debug('Logged into skype as: %s', me)
+    my_logger.debug('Logged into skype as: %s', me)
     
     global pid
     
@@ -85,9 +92,9 @@ def attach ():
     
     pid = dbusinfo.GetConnectionUnixProcessID('com.Skype.API')
     
-    logging.debug('Skype process id found: %d', pid)
+    my_logger.debug('Skype process id found: %d', pid)
     
-    logging.info('Successfully attached to skype')
+    my_logger.info('Successfully attached to skype')
 
 def getstatus (username = None):
     if username:
@@ -101,14 +108,14 @@ def checkuser (user):
     if user == me:
         return
     
-    logging.debug('Checking status of user: %s', user)
+    my_logger.debug('Checking status of user: %s', user)
     
     status = getstatus(user)
     
     if status != 'OFFLINE':
         return
     
-    logging.debug('%s is offline!', user)
+    my_logger.debug('%s is offline!', user)
     
     # TODO: stop sending these after 2 mins or so
     broadcast_offline(user)
@@ -135,13 +142,13 @@ def process_messages(packets):
         elif message[0] == 'off':
             process_message_off(message[1])
         else:
-            logging.debug('Received unknown message: %s (%s)' , packet, message[0])
+            my_logger.debug('Received unknown message: %s (%s)' , packet, message[0])
 
 def process_message_nick(nick):
     global users
     if nick not in users:
         if nick != me:
-            logging.info('Now checking for user: %s', nick)
+            my_logger.info('Now checking for user: %s', nick)
             users.append(nick)
         
 def process_message_off(nick):
@@ -169,9 +176,10 @@ while True:
             time.sleep(30)
     except dbus.exceptions.DBusException:
         # Skype is probably not running: be patient and maybe it'll come along later
-        time.sleep(60)
+        my_logger.info('Could not attach to skype, waiting 10s to try again...')
+        time.sleep(10)
     except PleaseRestart:
-        logging.info('Caught skype crash, restarting...')
+        my_logger.info('Caught skype crash, restarting...')
         os.kill(pid, signal.SIGKILL)
         os.system('skype &')
         # Wait and try to re-attach to the new instance of Skype
