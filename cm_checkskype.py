@@ -165,7 +165,6 @@ def process_message_nick(nick):
         
 def process_message_off(nick):
     if nick == me:
-        #TODO:  only restart when we get a few of these.
         restart()
     
 def update ():    
