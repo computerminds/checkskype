@@ -184,6 +184,8 @@ while True:
         os.system('skype &')
         # Wait and try to re-attach to the new instance of Skype
         time.sleep(60)
+        # Ignore all messages we got while restarting
+        packets = getudp()
 
 # Clean up.
 s.close()
