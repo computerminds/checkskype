@@ -53,7 +53,7 @@ def restart ():
     
     status = getstatus()
     
-    if status == 'OFFLINE':
+    if status == 'OFFLINE' or status == 'INVISIBLE':
         return # We are set to appear offline
 
     # This exception is caught by the main loop
@@ -162,6 +162,12 @@ def update ():
     
     packets = getudp()
     process_messages(packets)
+    
+    mystatus = getstatus()
+    
+    # If we're offline we don't see others' statuses
+    if mystatus == 'OFFLINE':
+        return
     
     # Check if we think anyone else is offline
     for user in users:
