@@ -186,6 +186,13 @@ def update ():
 
 while True:
     try:
+        # Don't connect to Skype immediately: could still be starting up
+        time.sleep(60)
+        
+        # Ignore all messages we get before connecting
+        packets = getudp()
+        
+        # Connect to Skype
         attach()
         
         while True:
@@ -193,16 +200,11 @@ while True:
             time.sleep(30)
     except dbus.exceptions.DBusException:
         # Skype is probably not running: be patient and maybe it'll come along later
-        my_logger.info('Could not attach to skype, waiting 60s to try again...')
-        time.sleep(60)
+        my_logger.info('Could not attach to skype')
     except PleaseRestart:
         my_logger.info('Caught skype crash, restarting...')
         os.kill(pid, signal.SIGKILL)
         os.system('skype &')
-        # Wait and try to re-attach to the new instance of Skype
-        time.sleep(60)
-        # Ignore all messages we got while restarting
-        packets = getudp()
 
 # Clean up.
 s.close()
