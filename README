@@ -1,10 +1,17 @@
 Run this script on a local network with others also running this script: Skype will be restarted if it dies.
 
+Installation (on Debian)
+------------------------
+
+You'll need to move the cm_checkskype script to /etc/init.d/cm_checkskype.
+
+Then you'll want to start that script when starting skype:
+
 You can set a program to run when Skype starts up by going to:
 
 Skype -> Options -> Notifications -> Skype Login -> Advanced View -> Execute the following script
 
-In the Coventry ComputerMinds office the command to run is:
+If you copied it to the location as above, enter:
 
 /etc/init.d/cm_checkskype start
 
