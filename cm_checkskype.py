@@ -10,7 +10,7 @@ import logging
 import logging.handlers
 
 my_logger = logging.getLogger('CMSkype')
-my_logger.setLevel(logging.DEBUG)
+my_logger.setLevel(logging.INFO)
 
 handler = logging.handlers.SysLogHandler(address = '/dev/log')
 
@@ -122,7 +122,7 @@ def checkuser (user):
         user_notify_count[user] = 0
         return
     
-    my_logger.debug('%s is offline!', user)
+    my_logger.info('%s is offline!', user)
     
     user_notify_count[user] += 1
     
